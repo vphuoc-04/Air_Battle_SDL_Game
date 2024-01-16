@@ -2,8 +2,7 @@
 #define BASE_OBJECT_H
 #include "CommonFunction.h"
 
-class BaseObject
-{
+class BaseObject{
 	public:
 		BaseObject();
 		~BaseObject();

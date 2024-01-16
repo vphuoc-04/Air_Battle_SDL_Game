@@ -7,7 +7,9 @@ BaseObject::BaseObject(){
 }
 
 BaseObject::~BaseObject(){
-
+	if(p_object_ != NULL){
+		SDL_FreeSurface(p_object_);
+	}
 }
 
 bool BaseObject::LoadImg(const char* file_name){

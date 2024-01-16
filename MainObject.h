@@ -3,6 +3,8 @@
 
 #include "CommonFunction.h"
 #include "BaseObject.h"
+#include "Shoot.h"
+#include <vector>
 
 #define WIDTH_MAIN_OBJECT 100
 #define HEIGHT_MAIN_OBJECT 50
@@ -13,10 +15,17 @@ class MainObject : public BaseObject{
 		~MainObject();
 		void handleInputAction(SDL_Event events);
 		void handleMove();
+		void setShootList(std::vector<Shoot*> shoot_list){
+			p_shoot_list_ = shoot_list;
+		}
+		std::vector<Shoot*> getShootList() const{
+			return p_shoot_list_;
+		}
 
 	private:
 		int x_val_;
 		int y_val_;
+		std::vector<Shoot*> p_shoot_list_;
 };
 
 #endif
