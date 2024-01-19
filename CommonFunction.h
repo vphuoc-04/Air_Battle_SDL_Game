@@ -9,6 +9,7 @@
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
 const int SCREEN_BPP = 32;
+const int NUM_ENEMIES = 5;
 
 static SDL_Surface* g_screen = NULL;
 static SDL_Surface* g_background = NULL;

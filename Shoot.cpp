@@ -22,3 +22,10 @@ void Shoot::handleMove(const int& x_border, const int& y_border){
 }
 
 void Shoot::handleInputAction(SDL_Event events){}
+
+void Shoot::handleMoveRightToLeft(){
+	rect_.x -= 8;
+	if(rect_.x < 0){
+		is_move_ = false;
+	}
+}

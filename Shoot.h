@@ -16,6 +16,7 @@ class Shoot: public BaseObject{
 		~Shoot();
 		void handleInputAction(SDL_Event events);
 		void handleMove(const int& x_border, const int& y_border);
+		void handleMoveRightToLeft();
 		int get_type() const {
 			return shoot_type_;
 		}

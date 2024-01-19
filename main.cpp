@@ -1,5 +1,6 @@
 ﻿#include "CommonFunction.h"
 #include "MainObject.h"
+#include "Enemy.h"
 
 bool Init(){
 	if(SDL_Init(SDL_INIT_EVERYTHING) == -1){
@@ -16,6 +17,7 @@ bool Init(){
 int main(int arc, char*argv[]){
 	int background_x = 0;
 	bool isQuit = false;
+	bool setImg = true;
 	if(Init() == false){
 		return 0;
 	}
@@ -26,7 +28,31 @@ int main(int arc, char*argv[]){
 
 	MainObject mainChar;
 	mainChar.SetRect(100, 200);
-	bool setImgMainChar = mainChar.LoadImg("img/combatAircraft.png");
+	setImg = mainChar.LoadImg("img/combatAircraft.png");
+		if(!setImg){
+		return 0;
+	}
+	Enemy* p_enemies = new Enemy[NUM_ENEMIES];
+	for (int enemy = 0; enemy < NUM_ENEMIES; enemy++){
+		Enemy* p_enemy = (p_enemies + enemy);
+		if(p_enemy){
+			setImg = p_enemy->LoadImg("img/enemyAircraft.png");
+			if (setImg == false){
+				return 0;
+			}
+
+			int random_y = rand() % 800;
+			if(random_y > SCREEN_HEIGHT - 150){
+				random_y = SCREEN_HEIGHT * 0.5;
+			}
+
+			p_enemy->SetRect(SCREEN_WIDTH + enemy*1000, random_y);
+			p_enemy->set_x_val(5);
+
+			Shoot* p_shoot = new Shoot();
+			p_enemy->ActionEnemy(p_shoot);
+		}
+	}
 	while(!isQuit){
 		while (SDL_PollEvent(&g_even)){
 			if(g_even.type == SDL_QUIT){
@@ -64,7 +90,14 @@ int main(int arc, char*argv[]){
 				}
 			}
 		}
-
+		for (int manyEnemies = 0; manyEnemies < NUM_ENEMIES; manyEnemies++){
+			Enemy* p_enemy = (p_enemies + manyEnemies);
+			if(p_enemy){
+				p_enemy->Show(g_screen);
+				p_enemy->handleMove(SCREEN_WIDTH, SCREEN_HEIGHT);
+				p_enemy->ShootEnemy(g_screen, SCREEN_WIDTH, SCREEN_HEIGHT);
+			}
+		}
 		if(SDL_Flip(g_screen) == -1){
 			return 0;
 		}

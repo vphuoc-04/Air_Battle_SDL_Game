@@ -79,7 +79,7 @@ void MainObject::handleMove(){
 	}
 
 	rect_.y += y_val_;
-	if(rect_.y < 0 || rect_.y + (HEIGHT_MAIN_OBJECT + 120) > SCREEN_HEIGHT){
+	if(rect_.y < 0 || rect_.y + (HEIGHT_MAIN_OBJECT + 110) > SCREEN_HEIGHT){
 		rect_.y -= y_val_;
 	}
 }
