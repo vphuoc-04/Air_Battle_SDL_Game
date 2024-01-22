@@ -72,6 +72,19 @@ void MainObject::handleInputAction(SDL_Event events){
 	}
 }
 
+void MainObject::extermination(const int& mainCharDie){
+	for(int i = 0; i < p_shoot_list_.size(); i++){
+		if(mainCharDie < p_shoot_list_.size()){
+			Shoot* p_shoot = p_shoot_list_.at(mainCharDie);
+			p_shoot_list_.erase(p_shoot_list_.begin() + mainCharDie);
+			if (p_shoot != NULL){
+				delete p_shoot;
+				p_shoot = NULL;
+			}
+		}
+	}
+}
+
 void MainObject::handleMove(){
 	rect_.x += x_val_;
 	if(rect_.x < 0 || rect_.x + WIDTH_MAIN_OBJECT > SCREEN_WIDTH){

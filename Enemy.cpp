@@ -10,7 +10,16 @@ Enemy::Enemy(){
 }
 
 Enemy::~Enemy(){
-
+	if(p_shoot_list_.size() > 0){
+		for(int i = 0; i < p_shoot_list_.size(); i++){
+			Shoot* p_shoot = p_shoot_list_.at(i);
+			if(p_shoot != NULL){
+				delete p_shoot;
+				p_shoot = NULL;
+			}
+		}
+		p_shoot_list_.clear();
+	}
 }
 
 void Enemy::ActionEnemy(Shoot* p_shoot){
@@ -52,6 +61,26 @@ void Enemy::handleMove(const int& x_border, const int& y_border){
 		}
 		rect_.y = random_y;
 	}
+}
+
+void Enemy::Reset(const int& xboder){
+	rect_.x = xboder;
+	int random_y = rand() % 800;
+	if(random_y > SCREEN_HEIGHT - 150){
+		random_y = SCREEN_HEIGHT * 0.5;
+	}
+	rect_.y = random_y;
+
+	for(int i = 0; i < p_shoot_list_.size(); i++){
+		Shoot* p_shoot = p_shoot_list_.at(i);
+		if(p_shoot){
+			ResetShoot(p_shoot);
+		}
+	}
+}
+
+void Enemy::ResetShoot(Shoot* p_shoot){
+	p_shoot->SetRect(rect_.x, rect_.y + rect_.h*0.5);
 }
 
 void Enemy::handleInputAction(SDL_Event events){}

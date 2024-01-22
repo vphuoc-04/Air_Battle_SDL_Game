@@ -40,6 +40,8 @@ class Enemy : public BaseObject{
 
 		void ActionEnemy(Shoot* p_shoot);
 		void ShootEnemy(SDL_Surface* des, const int& x_limit, const int& y_limit);
+		void Reset(const int& xboder);
+		void ResetShoot(Shoot* p_shoot);
 
 	private:
 		int x_val_;

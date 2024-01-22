@@ -21,6 +21,11 @@ class MainObject : public BaseObject{
 		std::vector<Shoot*> getShootList() const{
 			return p_shoot_list_;
 		}
+		void extermination(const int& extermination);
+
+		void reset(){
+			SetRect(100, 200);
+		}
 
 	private:
 		int x_val_;
