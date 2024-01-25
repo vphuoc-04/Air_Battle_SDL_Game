@@ -24,12 +24,13 @@ Enemy::~Enemy(){
 
 void Enemy::ActionEnemy(Shoot* p_shoot){
 	if(p_shoot){
-		bool setImg = p_shoot->LoadImg("img/bullet.png");
+		bool setImg = p_shoot->LoadImg(g_name_bullet);
 		if(setImg){
 			p_shoot->set_is_move(true);
 			p_shoot->setWidthHeight(WIDTH_SPHERE, HEIGHT_SPHERE);
 			p_shoot->set_type(Shoot::SPHERE);
 			p_shoot->SetRect(rect_.x, rect_.y + rect_.h*0.5);
+			p_shoot->set_x_val(SPEED_SHOOT_ENEMIES);
 			p_shoot_list_.push_back(p_shoot);
 		}
 	}
@@ -83,4 +84,31 @@ void Enemy::ResetShoot(Shoot* p_shoot){
 	p_shoot->SetRect(rect_.x, rect_.y + rect_.h*0.5);
 }
 
+Enemy* Enemy::InitEnemies(){
+    Enemy* p_enemies = new Enemy[NUM_ENEMIES];
+    for (int enemy = 0; enemy < NUM_ENEMIES; enemy++) {
+        Enemy* p_enemy = (p_enemies + enemy);
+        if (p_enemy) {
+            bool setImg = p_enemy->LoadImg(g_name_enemy);
+            if (setImg == false) {
+                delete[] p_enemies; 
+                return nullptr;
+            }
+
+            int random_y = rand() % 800;
+            if (random_y > SCREEN_HEIGHT - 150) {
+                random_y = SCREEN_HEIGHT * 0.5;
+            }
+
+            p_enemy->SetRect(SCREEN_WIDTH + enemy * 1000, random_y);
+            p_enemy->set_x_val(SPEED_ENEMY);
+
+            Shoot* p_shoot = new Shoot();
+            p_enemy->ActionEnemy(p_shoot);
+        }
+    }
+    return p_enemies;
+}
+
 void Enemy::handleInputAction(SDL_Event events){}
+

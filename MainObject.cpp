@@ -11,7 +11,7 @@ MainObject::MainObject(){
 
 MainObject::~MainObject(){}
 
-void MainObject::handleInputAction(SDL_Event events){
+void MainObject::handleInputAction(SDL_Event events, Mix_Chunk* shoot_sound[2]){
 	if(events.type == SDL_KEYDOWN){
 		switch (events.key.keysym.sym){
 			case SDLK_a:
@@ -34,6 +34,7 @@ void MainObject::handleInputAction(SDL_Event events){
 				break;
 		}
 	}
+	
 	else if(events.type == SDL_KEYUP){
 		switch (events.key.keysym.sym){
 			case SDLK_a:
@@ -60,15 +61,39 @@ void MainObject::handleInputAction(SDL_Event events){
 		Shoot* p_shoot = new Shoot();
 		if(events.button.button == SDL_BUTTON_LEFT){
 			p_shoot->setWidthHeight(WIDTH_SPHERE, HEIGHT_SPHERE);
-			p_shoot->LoadImg("img/bullet.png");
+			p_shoot->LoadImg(g_name_bullet);
 			p_shoot->set_type(Shoot::SPHERE);
+			Mix_PlayChannel(-1, shoot_sound[0], 0);
 		}
 		p_shoot->SetRect(this->rect_.x + 100, this->rect_.y + 30);
 		p_shoot->set_is_move(true);
 		p_shoot_list_.push_back(p_shoot);
+		p_shoot->set_x_val(SPEED_SHOOT_MAIN);
 	}
 	else if(events.type == SDL_MOUSEBUTTONUP){
 
+	}
+	if(replaying_){
+		return;
+	}
+}
+
+void MainObject::makeShootOfMain(SDL_Surface* des){
+	for (int i = 0; i < p_shoot_list_.size(); i++){
+		Shoot* p_shoot = p_shoot_list_.at(i);
+		if(p_shoot != NULL){
+			if(p_shoot->get_is_move()){
+				p_shoot->Show(des);
+				p_shoot->handleMove(SCREEN_WIDTH, SCREEN_HEIGHT);
+			}
+			else{
+				if(p_shoot != NULL){
+					p_shoot_list_.erase(p_shoot_list_.begin() + i);
+					delete p_shoot;
+					p_shoot = NULL;
+				}
+			}
+		}
 	}
 }
 
@@ -96,3 +121,13 @@ void MainObject::handleMove(){
 		rect_.y -= y_val_;
 	}
 }
+
+void MainObject::setReplaying(bool replaying) {
+    replaying_ = replaying;
+    if (replaying) {
+        x_val_ = 0;
+        y_val_ = 0;
+    }
+}
+
+

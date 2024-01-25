@@ -3,126 +3,82 @@
 #include "Enemy.h"
 #include "Explosion.h"
 #include "TextObject.h"
-
-TTF_Font* g_font_text = NULL;
+#include <SDL_mixer.h>
 
 bool Init(){
-	if(SDL_Init(SDL_INIT_EVERYTHING) == -1){
-		return false;
-	}
-
+	if(SDL_Init(SDL_INIT_EVERYTHING) == -1) {return false;}
 	g_screen = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BPP, SDL_SWSURFACE);
-	if(g_screen == NULL){
-		return false;
-	}
+	if(g_screen == NULL){return false;}
 
-	if(TTF_Init() == -1){
-		return false;
-	}
+	// Read WAV audio
+	if(Mix_OpenAudio(48000, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {return false;}
+	g_sound_shoot[0] = Mix_LoadWAV(g_name_audio_shoot);
+	g_sound_explosion[0] = Mix_LoadWAV(g_name_audio_exp);
+	if(g_sound_explosion[0] == NULL || g_sound_shoot[0] == NULL) {return false;}
 
-	g_font_text = TTF_OpenFont("font/Pixel-UniCode.ttf", 20);
-	if(g_font_text == NULL){
-		return false;
-	}
+	// Get Font
+	if(TTF_Init() == -1) {return false;}
+	g_font_text = TTF_OpenFont(g_name_score, 20);
+	g_font_menu = TTF_OpenFont(g_name_menu, 70);
+	g_font_gameOver = TTF_OpenFont(g_name_over, 70);
+	g_font_retry_exit = TTF_OpenFont(g_name_retry, 30);
+	if(g_font_text == NULL) {return false;}
+
 	return true;
 }
 
 int main(int arc, char*argv[]){
-	int background_x = 0;
-	int score_value = 0;
+	int background_x = 0, score_value = 0;
 	bool isQuit = false;
 	bool setImg = true;
-	if(Init() == false){
-		return 0;
-	}
-	g_background = SDLCommonFunction::LoadImage("img/background.png");
-	if(g_background == NULL){
-		return 0;
-	}
+	bool gameOver = false;
+
+	if(Init() == false) {return 0;}
+
+	// Make background
+	g_background = SDLCommonFunction::LoadImage(g_name_backgroud); if(g_background == NULL) {return 0;}
 
 	// Make main character
 	MainObject mainChar;
-	mainChar.SetRect(100, 200);
-	setImg = mainChar.LoadImg("img/combatAircraft.png");
-		if(!setImg){
-		return 0;
-	}
+	mainChar.SetRect(POS_X_START_MAIN, POS_Y_START_MAIN);
+	setImg = mainChar.LoadImg(g_name_main_char);
+	if(!setImg) {return 0;}
 
 	// Make explosion
 	Explosion exp;
-	setImg = exp.LoadImg("img/explosion.png");
+	setImg = exp.LoadImg(g_name_explosion);
 	exp.set_clip();
-	if(setImg == false){
-		return 0;
-	}
+	if(!setImg) {return 0;}
 
 	// Text score
 	TextObject score;
 	score.SetColor(TextObject::WHITE_TEXT);
 
-	// Text higgerScore
-	/*TextObject higgerScore;
-	higgerScore.setColor(TextObject::WHITE_TEXT);*/
+	// Make enemy
+	Enemy* p_enemies = Enemy::InitEnemies();
+    if (p_enemies == nullptr) {return 0;}
 
-	// Make enemy 
-	Enemy* p_enemies = new Enemy[NUM_ENEMIES];
-	for (int enemy = 0; enemy < NUM_ENEMIES; enemy++){
-		Enemy* p_enemy = (p_enemies + enemy);
-		if(p_enemy){
-			setImg = p_enemy->LoadImg("img/enemyAircraft.png");
-			if (setImg == false){
-				return 0;
-			}
+	int ret_menu = SDLCommonFunction::menu(g_screen, g_font_menu); if(ret_menu == 1) {isQuit = true;} 
 
-			int random_y = rand() % 800;
-			if(random_y > SCREEN_HEIGHT - 150){
-				random_y = SCREEN_HEIGHT * 0.5;
-			}
-
-			p_enemy->SetRect(SCREEN_WIDTH + enemy*1000, random_y);
-			p_enemy->set_x_val(5);
-
-			Shoot* p_shoot = new Shoot();
-			p_enemy->ActionEnemy(p_shoot);
-		}
-	}
 	while(!isQuit){
 		while (SDL_PollEvent(&g_even)){
 			if(g_even.type == SDL_QUIT){
 				isQuit = true;
 				break;
 			}
-			mainChar.handleInputAction(g_even);
+			mainChar.handleInputAction(g_even, g_sound_shoot);
 		}
+
+		// Moving background
 		background_x -= 2;
 		SDLCommonFunction::applySurface(g_background, g_screen, background_x, 0);
 		SDLCommonFunction::applySurface(g_background, g_screen, background_x + SCREEN_WIDTH, 0);
-		if (background_x <= -SCREEN_WIDTH){
-			background_x = 0;
-		}
+		if (background_x <= -SCREEN_WIDTH) {background_x = 0;}
 
 		mainChar.Show(g_screen);
 		mainChar.handleMove();
+		mainChar.makeShootOfMain(g_screen);
 
-		for (int i = 0; i < mainChar.getShootList().size(); i++){
-			std::vector<Shoot*> shoot_list = mainChar.getShootList();
-			Shoot* p_shoot = shoot_list.at(i);
-			if(p_shoot != NULL){
-				if(p_shoot->get_is_move()){
-					p_shoot->Show(g_screen);
-					p_shoot->handleMove(SCREEN_WIDTH, SCREEN_HEIGHT);
-				}
-				else{
-					if(p_shoot != NULL){
-						shoot_list.erase(shoot_list.begin() + i);
-						mainChar.setShootList(shoot_list);
-
-						delete p_shoot;
-						p_shoot = NULL;
-					}
-				}
-			}
-		}
 		for (int manyEnemies = 0; manyEnemies < NUM_ENEMIES; manyEnemies++){
 			Enemy* p_enemy = (p_enemies + manyEnemies);
 			if(p_enemy){
@@ -140,25 +96,40 @@ int main(int arc, char*argv[]){
 						exp.SetRect(x_boom, y_boom);
 						exp.ShowEX(g_screen);
 						SDL_Delay(50);
-						if(SDL_Flip(g_screen) == -1){
-							return 0;
+						if(SDL_Flip(g_screen) == -1) {return 0;}
+						Mix_PlayChannel(-1, g_sound_explosion[0], 0);
+					}
+					while(!gameOver){
+						SDLCommonFunction::showGameOverText(g_screen, g_font_gameOver, g_font_retry_exit);
+						while(SDL_PollEvent(&g_even)){
+							if(g_even.type == SDL_QUIT){
+								isQuit = true;
+							}
+							else if(g_even.type == SDL_KEYDOWN ){
+								switch(g_even.key.keysym.sym){
+									case SDLK_r:
+										mainChar.reset();
+										score_value = 0;
+										for(int i = 0; i < NUM_ENEMIES; i++){
+											p_enemies[i].Reset(SCREEN_WIDTH + i * 1000); 
+										}
+										gameOver = true;
+										mainChar.setReplaying(true);
+										break;
+
+									case SDLK_e:
+										delete [] p_enemies;
+										SDLCommonFunction::cleanUp();
+										SDLCommonFunction::menu(g_screen, g_font_menu);
+										SDL_Quit();
+										return 0;
+								}
+							}
 						}
+						SDL_Flip(g_screen);
 					}
-					if(MessageBox(NULL, L"GAME OVER!", L"THÔNG BÁO", MB_RETRYCANCEL) == IDRETRY){
-						mainChar.reset();
-						score_value = 0;
-						for (int i = 0; i < NUM_ENEMIES; i++) {
-							p_enemies[i].Reset(SCREEN_WIDTH + i * 1000); 
-						}
-						break;
-					}
-					else{
-						delete [] p_enemies;
-						SDLCommonFunction::cleanUp();
-						SDL_Quit();
-						return 0;
-					}
-				}
+					gameOver = false;
+				}	
 
 				//Check collision shoot of main to enemies
 				std::vector<Shoot*> shoot_list = mainChar.getShootList();
@@ -166,23 +137,22 @@ int main(int arc, char*argv[]){
 					Shoot* p_shoot = shoot_list.at(mainCharShootToEnemies);
 					if (p_shoot != NULL){
 						bool ret_collision = SDLCommonFunction::checkCollision(p_shoot->GetRect(), p_enemy->GetRect());
-							if(ret_collision){
-								score_value++;
-								for(int explosion = 0; explosion < 4; explosion++){
+						if(ret_collision){
+							score_value++;
+							for(int explosion = 0; explosion < 4; explosion++){
 								int x_boom = (p_enemy->GetRect().x + p_enemy->GetRect().w * 0.5) - EXP_WIDTH * 0.5;
 								int y_boom = (p_enemy->GetRect().y + p_enemy->GetRect().h * 0.5) - EXP_HEIGHT * 0.5;
 								exp.set_frame(explosion);
 								exp.SetRect(x_boom, y_boom);
 								exp.ShowEX(g_screen);
-								//SDL_Delay(20);
 								if(SDL_Flip(g_screen) == -1){
 									delete [] p_enemies;
 									SDLCommonFunction::cleanUp();
 									SDL_Quit();
 									return 0;
 								}
+								Mix_PlayChannel(-1, g_sound_explosion[0], 0);
 							}
-
 							p_enemy->Reset(SCREEN_WIDTH + manyEnemies*1000);
 							mainChar.extermination(mainCharShootToEnemies);
 						}
@@ -203,24 +173,39 @@ int main(int arc, char*argv[]){
 								exp.SetRect(x_boom, y_boom);
 								exp.ShowEX(g_screen);
 								SDL_Delay(50);
-								if(SDL_Flip(g_screen) == -1){
-									return 0;
+								if(SDL_Flip(g_screen) == -1) {return 0;}
+								Mix_PlayChannel(-1, g_sound_explosion[0], 0);
+							}
+							while (!gameOver) {
+								SDLCommonFunction::showGameOverText(g_screen, g_font_gameOver, g_font_retry_exit);
+								while(SDL_PollEvent(&g_even)){
+									if(g_even.type == SDL_QUIT){
+										isQuit = true;
+									}
+									else if (g_even.type == SDL_KEYDOWN){
+										switch (g_even.key.keysym.sym) {
+											case SDLK_r:
+												mainChar.reset();
+												score_value = 0;
+												for (int i = 0; i < NUM_ENEMIES; i++) {
+													p_enemies[i].Reset(SCREEN_WIDTH + i * 1000); 
+												}
+												gameOver = true;
+												mainChar.setReplaying(true);
+												break;
+
+											case SDLK_e:
+												delete [] p_enemies;
+												SDLCommonFunction::cleanUp();
+												SDLCommonFunction::menu(g_screen, g_font_menu);
+												SDL_Quit();
+												return 0;
+										}
+									}
 								}
+								SDL_Flip(g_screen);
 							}
-							if (MessageBox(NULL, L"GAME OVER!", L"THÔNG BÁO", MB_RETRYCANCEL) == IDRETRY) {
-								mainChar.reset();
-								score_value = 0;
-								for (int i = 0; i < NUM_ENEMIES; i++) {
-									p_enemies[i].Reset(SCREEN_WIDTH + i * 1000); 
-								}
-								break;
-							}
-							else{
-								delete [] p_enemies;
-								SDLCommonFunction::cleanUp();
-								SDL_Quit();
-								return 0;
-							}
+							gameOver = false;
 						}
 					}
 				}
@@ -234,12 +219,6 @@ int main(int arc, char*argv[]){
 		score.SetText(strScore);
 		score.SetRect(1100, 30);
 		score.CreateText(g_font_text, g_screen);
-
-		// Show higger score value of mainChar
-		/*std::string strHiggerScore("Higger Score:  ");
-		higgerScore.setText(strHiggerScore);
-		higgerScore.setRect(1100, 10);
-		higgerScore.createText(g_font_text, g_screen);*/
 
 		// Update screen
 		if(SDL_Flip(g_screen) == -1){

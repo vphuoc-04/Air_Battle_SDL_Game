@@ -1,4 +1,5 @@
 #include "Explosion.h"
+#include "Enemy.h"
 
 Explosion::Explosion(){}
 
@@ -32,3 +33,4 @@ void Explosion::ShowEX(SDL_Surface* des){
 	}
 	SDLCommonFunction::applySurfaceClip(this->p_object_, des, &clip_[frame], rect_.x, rect_.y);
 }
+
